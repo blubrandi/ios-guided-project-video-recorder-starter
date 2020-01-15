@@ -13,26 +13,39 @@ class CameraViewController: UIViewController {
     
     lazy private var captureSession = AVCaptureSession()
     lazy private var fileOutput = AVCaptureMovieFileOutput()
-
+    var player: AVPlayer?
     @IBOutlet var recordButton: UIButton!
     @IBOutlet var cameraView: CameraPreviewView!
 
 
-	override func viewDidLoad() {
-		super.viewDidLoad()
-
-		// Resize camera preview to fill the entire screen
-		cameraView.videoPlayerView.videoGravity = .resizeAspectFill
-        
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        // Resize camera preview to fill the entire screen
+        cameraView.videoPlayerView.videoGravity = .resizeAspectFill
         setupCamera()
         
         // Add tap gesture to replay video (repeat loop)
-	}
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTapGesture(tapGesture:)))
+        view.addGestureRecognizer(tapGesture)
+    }
+    @objc func handleTapGesture(tapGesture: UITapGestureRecognizer) {
+        print("play movie")
+        if tapGesture.state == .ended {
+            playRecording()
+        }
+    }
 
 
     @IBAction func recordButtonPressed(_ sender: Any) {
         toggleRecording()
 	}
+    
+    func playRecording() {
+        if let player = player {
+            player.seek(to: CMTime.zero)
+            player.play()
+        }
+    }
     
     func updateViews() {
         recordButton.isSelected = fileOutput.isRecording
@@ -123,6 +136,20 @@ class CameraViewController: UIViewController {
 		let fileURL = documentsDirectory.appendingPathComponent(name).appendingPathExtension("mov")
 		return fileURL
 	}
+    
+    func playMovie(url: URL) {
+        player = AVPlayer(url: url)
+        let playerLayer = AVPlayerLayer(player: player)
+        var topRect = view.bounds
+        topRect.size.height = topRect.height / 4
+        topRect.size.width = topRect.width / 4
+        topRect.origin.y = view.layoutMargins.top
+        playerLayer.frame = topRect
+        view.layer.addSublayer(playerLayer)
+        player?.play()
+        
+        // TODO: Add delegate and repeat video if at end
+    }
 }
 
 extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
@@ -134,6 +161,8 @@ extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
     }
     print("Video: \(outputFileURL.path)")
     updateViews()
+    
+    playMovie(url: outputFileURL)
   }
    
   func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
