@@ -12,6 +12,7 @@ import AVFoundation
 class CameraViewController: UIViewController {
     
     lazy private var captureSession = AVCaptureSession()
+    lazy private var fileOutput = AVCaptureMovieFileOutput()
 
     @IBOutlet var recordButton: UIButton!
     @IBOutlet var cameraView: CameraPreviewView!
@@ -24,12 +25,28 @@ class CameraViewController: UIViewController {
 		cameraView.videoPlayerView.videoGravity = .resizeAspectFill
         
         setupCamera()
+        
+        // Add tap gesture to replay video (repeat loop)
 	}
 
 
     @IBAction func recordButtonPressed(_ sender: Any) {
-
+        toggleRecording()
 	}
+    
+    func updateViews() {
+        recordButton.isSelected = fileOutput.isRecording
+    }
+    
+    func toggleRecording() {
+        if fileOutput.isRecording {
+            //stop
+            fileOutput.stopRecording()
+        } else {
+            //start
+            fileOutput.startRecording(to: newRecordingURL(), recordingDelegate: self)
+        }
+    }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -67,6 +84,9 @@ class CameraViewController: UIViewController {
         //Add inputs
         
         //Video input
+        guard captureSession.canAddOutput(fileOutput) else {
+            fatalError("Can't setup the file output for the movie")
+        }
         
         //Audio input
         
@@ -100,5 +120,22 @@ class CameraViewController: UIViewController {
 		let fileURL = documentsDirectory.appendingPathComponent(name).appendingPathExtension("mov")
 		return fileURL
 	}
+}
+
+extension CameraViewController: AVCaptureFileOutputRecordingDelegate {
+   
+  func fileOutput(_ output: AVCaptureFileOutput, didFinishRecordingTo outputFileURL: URL, from connections: [AVCaptureConnection], error: Error?) {
+        
+    if let error = error {
+        print(error)
+    }
+    print("Video: \(outputFileURL.path)")
+    updateViews()
+  }
+   
+  func fileOutput(_ output: AVCaptureFileOutput, didStartRecordingTo fileURL: URL, from connections: [AVCaptureConnection]) {
+    // update UI
+     updateViews()
+  }
 }
 
