@@ -75,7 +75,8 @@ class CameraViewController: UIViewController {
         captureSession.addInput(cameraInput)
         
         if captureSession.canSetSessionPreset(.hd1920x1080) {
-            captureSession.canSetSessionPreset(.hd1920x1080)
+//            captureSession.setSessionPreset(.hd1920x1080)
+            captureSession.sessionPreset = .hd1920x1080
         }
         
         //start stream
@@ -87,6 +88,8 @@ class CameraViewController: UIViewController {
         guard captureSession.canAddOutput(fileOutput) else {
             fatalError("Can't setup the file output for the movie")
         }
+        
+        captureSession.addOutput(fileOutput)
         
         //Audio input
         
