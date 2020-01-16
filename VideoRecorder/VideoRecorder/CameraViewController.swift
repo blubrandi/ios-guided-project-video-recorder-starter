@@ -106,10 +106,26 @@ class CameraViewController: UIViewController {
         
         //Audio input
         
+        let microphone = bestAudio()
+        guard let audioInput = try? AVCaptureDeviceInput(device: microphone) else {
+            fatalError("Can't create input from microphone")
+        }
+        guard captureSession.canAddInput(audioInput) else {
+            fatalError("Can't add audio input")
+        }
+        captureSession.addInput(audioInput)
+        
         //Video output (movie)
         
         captureSession.commitConfiguration()
         cameraView.session = captureSession
+    }
+    
+    private func bestAudio() -> AVCaptureDevice {
+        if let device = AVCaptureDevice.default(for: .audio) {
+            return device
+        }
+        fatalError("No audio")
     }
     
     private func bestCamera() -> AVCaptureDevice {
